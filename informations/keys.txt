@@ -1,0 +1,29 @@
+BitMex
+Name : APIWebSocket
+ID : tiSxnWrzu7yrRuUeuc5u75lF
+Secret : AeyOF0Gts_RcUTOn0hyu6dB6xfMfcVAsOIdFctD0fK5LO-do
+
+
+Alpha Advantage
+Key: OGB3T91BIOCUAQ95
+
+
+Coinbase
+portofolio: Default Portfolio
+API key nickname: Main
+PassPhrase: mwa296oozxm
+secret: rGqQm7H2BW0I+RLxI6VngMmlSTwxxf2dGaNpubRc8DH0z6won9cu3/i4/eC1TPxhj2nZRO4E1K2IxutXOvwHfA==
+Permissions: View/Trade/Transfer
+Key: e5a5d3e7edf23c0e7a61b1c4de8b257a
+
+EUR account Coinbase -> d78a7c7d-5a78-43e4-bebc-5a81c101e07c
+
+
+
+Coinbase Sandbox
+portofolio: Default Portfolio
+API key nickname: MainSanbox
+PassPhrase: fyhw1sn2u0h
+secret: oxMzcd0xigpV+W4cxsl2xqntrG2iYx841igfgbu646UgCMzlxcfCNqUB2nUFn79EzfynVwKj7hE8ElUipX46nA==
+Permissions: View/Trade/Transfer
+Key: cc94e7c4d7428a8c319640509285443a
