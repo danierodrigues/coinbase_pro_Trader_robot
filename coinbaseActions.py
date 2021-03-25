@@ -12,10 +12,15 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
     if len(dictionaryCryptos) == 0:
         return None;
 
-
-
-
-
+    print("*********************************************************************************************************")
+    print("*                                                                                                       *")
+    print("*                                                                                                       *")
+    print("*                                                                                                       *")
+    print("*                                             Começo da compra                                                      *")
+    print("*                                                                                                       *")
+    print("*                                                                                                       *")
+    print("*                                                                                                       *")
+    print("*********************************************************************************************************")
 
     db = MongoClient.cryptoHistoric
 
@@ -46,18 +51,18 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
     if quantityCryprosInvested >= numberMaxCryptosToInvest:
         return None;
 
-    for i in range(quantityCryprosInvested + 1):
-        print("iteração")
-        if quantityCryprosInvested == i:
-            print("entrou dentro do if")
-            d = quantityCryprosInvested - i
-            print("O d:",d)
-            if d == 0:
-                "d é igual a 0"
-                d = 1
-            quantityToInvest = float(moneyEUR) / d
-            print("quantidade para investir:",quantityToInvest)
-            break
+    #for i in range(quantityCryprosInvested + 1):
+        #print("iteração")
+        #if quantityCryprosInvested == i:
+            #print("entrou dentro do if")
+            #d = quantityCryprosInvested - i
+            #print("O d:",d)
+            #if d == 0:
+                #"d é igual a 0"
+                #d = 1
+            #quantityToInvest = float(moneyEUR) / d
+            #print("quantidade para investir:",quantityToInvest)
+            #break
 
 
     #Know if the coin is already buyed
@@ -121,6 +126,10 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
                 return None
 
     if isStillWorthIt == True:
+        quantityToInvest = float(moneyEUR) / (numberMaxCryptosToInvest - quantityCryprosInvested)
+
+        print("Quantidade decidida:", quantityToInvest)
+
         #Verify if the money is suficient to buy the coin
         if CoinFinded == 'BTC':
             if (float(lastValue["price"]) * BTCSellMin) >= quantityToInvest:
@@ -153,9 +162,11 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
                 else:
                     return None
 
-
+    print('Moeda e: ' + getattr(dictionaryCryptos[CoinFinded],"codeCoinbase") + '-EUR')
+    print("quantidade para investir: ",quantityToInvest)
+    return None
     #Buy
-    response = auth_client.place_market_order(product_id='' + CoinFinded + '-EUR',
+    response = auth_client.place_market_order(product_id='' + getattr(dictionaryCryptos[CoinFinded],"codeCoinbase") + '-EUR',
                                               side='buy',
                                               funds=quantityToInvest)
 

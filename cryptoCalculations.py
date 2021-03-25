@@ -277,7 +277,7 @@ def calculatelowercryptos(dictionaryCryptos, public_client,auth_client,CoinbaseA
 
             print(lastValue)
 
-            if lastValue['type'] == 'ticker':
+            if lastValue['type'] == 'ticker' and float(lastValue['price']) != 0:
                 collection = db[getattr(dictionaryCryptos[items],"name")]
                 historic = collection.find()
 

@@ -1,16 +1,7 @@
 
 import cbpro
-import bitmexFunctions
 import excel
-import san
-import requests
-import json
-from reader import feed
-import time
-import pymongo
 from pymongo import MongoClient
-import json, hmac, hashlib, time, requests, base64
-from requests.auth import AuthBase
 import cryptoCalculations
 import coinbaseActions
 from time import sleep
@@ -58,6 +49,8 @@ def entireProcessEUR(client, auth_client):
 
 if __name__ == '__main__':
 
+
+
     client = MongoClient('localhost', 27017)
 
     #Use the Coinbase Pro API
@@ -67,47 +60,54 @@ if __name__ == '__main__':
 
     #print(auth_client.get_accounts())
 
+    #currencies = auth_client.get_currencies()
+
+    #excel.createAndWriteExcel(currencies)
+
+    #cryptoDictionary = excel.readAndCreateClasses(client)
+
+
     while True:
-        try:
+        #try:
 
-            print("*********************************************************************************************************")
-            print("*                                                                                                       *")
-            print("*                                                                                                       *")
-            print("*                                                                                                       *")
-            print("*                                             Init                                                      *")
-            print("*                                                                                                       *")
-            print("*                                                                                                       *")
-            print("*                                                                                                       *")
-            print("*********************************************************************************************************")
-
-
-            #API Coinbase Pro EUR Account
-            profileEUR = auth_client.get_account(EURAccountId)
-
-            #Sandbox API EUR Account
-            #profileEUR = auth_client.get_account('e4876f2e-8332-4c60-8af1-a76bdec60ce9')
+        print("*********************************************************************************************************")
+        print("*                                                                                                       *")
+        print("*                                                                                                       *")
+        print("*                                                                                                       *")
+        print("*                                             Init                                                      *")
+        print("*                                                                                                       *")
+        print("*                                                                                                       *")
+        print("*                                                                                                       *")
+        print("*********************************************************************************************************")
 
 
-            print(profileEUR["available"])
-            moneyEUR = profileEUR["available"]
+        #API Coinbase Pro EUR Account
+        profileEUR = auth_client.get_account(EURAccountId)
 
-            orders = auth_client.get_orders()
-
-            print(orders)
-
-            quantityCryprosInvested = 0  # Actual cryptos quantity already invested
-            for item in orders:
-                print(item)
-                if item["side"] == 'sell' and item["type"] == 'limit':
-                    quantityCryprosInvested += 1
+        #Sandbox API EUR Account
+        #profileEUR = auth_client.get_account('e4876f2e-8332-4c60-8af1-a76bdec60ce9')
 
 
-            if float(moneyEUR) != 0 or quantityCryprosInvested < numberMaxCryptosToInvest:
-                entireProcessEUR(client, auth_client)
-            else:
-                print("Sleeping 30 sec.")
-                sleep(30)
-        except:
-            print("Something went wrong")
+        print(profileEUR["available"])
+        moneyEUR = profileEUR["available"]
+
+        orders = auth_client.get_orders()
+
+        print(orders)
+
+        quantityCryprosInvested = 0  # Actual cryptos quantity already invested
+        for item in orders:
+            print(item)
+            if item["side"] == 'sell' and item["type"] == 'limit':
+                quantityCryprosInvested += 1
+
+
+        if float(moneyEUR) != 0 or quantityCryprosInvested < numberMaxCryptosToInvest:
+            entireProcessEUR(client, auth_client)
+        else:
+            print("Sleeping 30 sec.")
+            sleep(30)
+        #except:
+            #print("Something went wrong")
 
 
