@@ -59,7 +59,7 @@ def calculate24Hours(dictionaryCryptos, public_client):
 
             while counter >= 3:
                 # print(timeCount - time.time())
-                if (time.time() - timeCount) >= 1:  # 1 second
+                if (time.time() - timeCount) >= 2:  # 1 second
                     print("entrou dentro do if")
                     print(timeCount)
                     counter = 0
@@ -190,8 +190,9 @@ def calculate30daysAgo(dictionaryCryptos, public_client):
                     data["days"] = 0
                     data["UpdatedAt"] = now
 
-                    post_id = collection.insert_one(data).inserted_id
-                    print(post_id)
+                    if data["WeekOne"][0] != 1000000000000000 and data["WeekFour"][0] != 1000000000000000 and data["WeekOne"][1] != 0 and data["WeekFour"][1] != 0:
+                        post_id = collection.insert_one(data).inserted_id
+                        print(post_id)
 
                 counter += 1
 

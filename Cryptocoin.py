@@ -19,6 +19,8 @@ class cryptocoin:
         #It is blocked by me
         self.isBlocked = isBlocked
         self.profileCoinbaseID = None
+        self.maxPrecision = None
+        self.minCryptoSell = None
 
 
     def getName(self):

@@ -56,7 +56,9 @@ def createAndWriteExcel(currencies):
 
 def readAndCreateClasses(client):
 
-    df = pd.read_excel(r'./Criptomoedas_Coinbase.xlsx')  # place "r" before the path string to address special character, such as '\'. Don't forget to put the file name at the end of the path + '.xlsx'
+
+
+    df = pd.read_excel(r'C:\Users\danie\Desktop\projetos\projetoCoinbase\Criptomoedas_Coinbase.xlsx') #r'./Criptomoedas_Coinbase.xlsx')  # place "r" before the path string to address special character, such as '\'. Don't forget to put the file name at the end of the path + '.xlsx'
     #for items in df:
         #print(items)
         #continue
@@ -75,6 +77,12 @@ def readAndCreateClasses(client):
         #isbuyed=items["isbuyed"]  isBlocked=items["isBlocked"]
 
         cryptoDictionary[p1.getName()] = p1
+
+
+
+    dbnames = client.database_names()
+    if 'cryptoClasses' in dbnames:
+        client.drop_database('cryptoClasses')
 
     db = client.cryptoClasses
     collection = db.cryptoClasses

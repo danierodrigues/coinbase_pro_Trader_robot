@@ -21,6 +21,8 @@ CoinbasesecretKeySandbox = "oxMzcd0xigpV+W4cxsl2xqntrG2iYx841igfgbu646UgCMzlxcfC
 CoinbaseAPIPassSandbox = "fyhw1sn2u0h"
 CoinbaseAPIKeySandbox = "cc94e7c4d7428a8c319640509285443a"
 
+isFirstTime = True
+
 
 def entireProcessEUR(client, auth_client):
 
@@ -32,6 +34,8 @@ def entireProcessEUR(client, auth_client):
 
     dic = excel.readClassesFromDatabase(client)
     dic = coinbaseActions.setProfileIDCryptos(auth_client=auth_client, dictionary=dic)
+    dic = coinbaseActions.setMaxPrecisionCryptos(auth_client=auth_client, dictionary=dic)
+    dic = coinbaseActions.setminSizeCryptos(public_client=public_client, dictionary=dic)
 
     cryptoCalculations.saveHistoricCryptos(dic, public_client)
 
@@ -49,7 +53,7 @@ def entireProcessEUR(client, auth_client):
 
 if __name__ == '__main__':
 
-
+    #coinbaseActions.typesCryptosInvestedAndSaveDB()
 
     client = MongoClient('localhost', 27017)
 

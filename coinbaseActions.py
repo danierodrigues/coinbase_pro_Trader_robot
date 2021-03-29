@@ -1,11 +1,13 @@
 import cbpro
-from vardata import numberMaxCryptosToInvest, lessHight, BCHSellMin, BTCSellMin, LTCSellMin, ETHSellMin, marginSell
+from vardata import numberMaxCryptosToInvest, lessHight, profit, fees
 import cryptoCalculations
 import requests
 from requests.auth import AuthBase
 import time
 import base64, hashlib, hmac
 import numpy
+from _decimal import Decimal
+import math
 
 
 def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoClient):
@@ -42,7 +44,7 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
         if item["side"] == 'sell' and item["type"] == 'limit':
             quantityCryprosInvested += 1
 
-    print("quantdade order:",quantityCryprosInvested)
+    print("quantidade order:",quantityCryprosInvested)
 
 
 
@@ -85,113 +87,167 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
             if item[1] == getattr(dictionaryCryptos[d],"name"):
                 cryptoAccount = auth_client.get_account(getattr(dictionaryCryptos[d], "profileCoinbaseID"))
                 print("conta: ",cryptoAccount)
-                if float(cryptoAccount['balance']) != 0:
+                if float(cryptoAccount['hold']) != 0:
                     isCoinFinded = False
                 else:
                     print("é trueeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
                     isCoinFinded = True
                     CoinFinded = d
                     percentageBelow = float(item[0])
+
+
+                    print("moeda encontrada ", CoinFinded)
+                    # Verify if the coin is still worth it
+                    lastValue = cryptoCalculations.knowLastValue(
+                        getattr(dictionaryCryptos[CoinFinded], "codeCoinbase") + "-EUR")
+                    print(lastValue)
+
+                    if lastValue['type'] == 'ticker':
+                        collection = db[getattr(dictionaryCryptos[CoinFinded], "name")]
+                        historic = collection.find()
+
+                        for his in historic:
+                            highter = max(his["WeekOne"][1], his["WeekTwo"][1], his["WeekThree"][1], his["WeekFour"][1])
+
+                            print(highter)
+                            atualPrice = float(lastValue["price"])
+                            x = (highter - atualPrice) / highter
+                            print(x)
+                            percentage = x * 100
+
+                            print("Is Less : ", percentage, "%")
+
+                            print(lessHight)
+
+                            if lessHight <= percentage and (percentage - 3) <= percentageBelow:
+                                isStillWorthIt = True
+                            else:
+                                continue
+            if isStillWorthIt == True:
+                quantityToInvest = float(moneyEUR) / (numberMaxCryptosToInvest - quantityCryprosInvested)
+
+                print("Quantidade decidida:", quantityToInvest)
+
+                if float(getattr(dictionaryCryptos[CoinFinded], "min")) >= quantityToInvest:
+                    if float(getattr(dictionaryCryptos[CoinFinded], "min")) <= float(moneyEUR):
+                        quantityToInvest = float(getattr(dictionaryCryptos[CoinFinded], "min"))
+                        print("Minimo agora: ",float(getattr(dictionaryCryptos[CoinFinded], "minCryptoSell")))
+                        if float(getattr(dictionaryCryptos[CoinFinded], "minCryptoSell")) > (quantityToInvest / float(lastValue["price"])):
+                            if (float(getattr(dictionaryCryptos[CoinFinded], "minCryptoSell")) * float(lastValue["price"]) * 1.10) < float(moneyEUR):
+                                quantityToInvest = float(getattr(dictionaryCryptos[CoinFinded], "minCryptoSell")) * float(lastValue["price"])
+                                quantityToInvest = quantityToInvest * 1.10
+                            else:
+                                isStillWorthIt = False
+                    else:
+                        isStillWorthIt = False
+
+            if isStillWorthIt == True:
+                print('Moeda e: ' + getattr(dictionaryCryptos[CoinFinded], "codeCoinbase") + '-EUR')
+                print("quantidade para investir: ", quantityToInvest)
+
+                maxPrecision = getattr(dictionaryCryptos[CoinFinded], "maxPrecision")
+
+                print("A precisão é esta: ", maxPrecision)
+
+                deci = Decimal(maxPrecision)
+                print(deci)
+                expoente = deci.as_tuple().exponent
+                print("expoente: ", deci.as_tuple().exponent)
+                if expoente < 0:
+                    expoente = expoente * -1
+
+                print("expoente agora: ", expoente)
+
+                quantityToInvest = round_down(n=quantityToInvest, decimals=2)
+
+                print("Arredondado: ", quantityToInvest)
+
+                # Buy
+                response = auth_client.place_market_order(
+                    product_id='' + getattr(dictionaryCryptos[CoinFinded], "codeCoinbase") + '-EUR',
+                    side='buy',
+                    funds=quantityToInvest)
+
+                print(response)
+
+                if not "id" in response:
+                    print("Error buying: ",response)
+                    isStillWorthIt = False
+                    continue
+
+                try:
+                    while response["status"] != 'done':
+                        response = auth_client.get_order(response["id"])
+                except:
+                    print("Error")
+                    isStillWorthIt = False
+                    continue
+
+                print(response)
+                print(response['filled_size'])
+                print(response['specified_funds'])
+
+                valueCrypto = float(response['funds']) / float(response['filled_size'])
+
+                print("Value Crypto: ", valueCrypto)
+
+                # Calculate selling Price
+                buyValue = float(response['specified_funds'])
+                proofitPretended = buyValue * profit
+                feesBuySell = (2 * buyValue) * fees
+                feeProfit = proofitPretended * fees
+                sellValue = buyValue + proofitPretended + feesBuySell + feeProfit
+
+                print("Valor de Venda:", sellValue)
+
+                sellCryptoValue = sellValue / float(response['filled_size'])
+
+                print("Valor Crypto na venda: ", sellCryptoValue)
+
+                # If buy is succed, the post a linit sell
+                if response["status"] == 'done':
+
+                    maxPrecision = getattr(dictionaryCryptos[CoinFinded], "maxPrecision")
+
+                    print("A precisão é esta: ", maxPrecision)
+
+                    deci = Decimal(maxPrecision)
+                    print(deci)
+                    expoente = deci.as_tuple().exponent
+                    print("expoente: ", deci.as_tuple().exponent)
+                    if expoente < 0:
+                        expoente = expoente * -1
+
+                    print("expoente agora: ", expoente)
+
+                    sellCryptoValue = round_up(n=sellCryptoValue, decimals=expoente)
+                    print("Proço da Crypto já arredondado: ", sellCryptoValue)
+                    sellresponse = auth_client.place_limit_order(product_id=response["product_id"],
+                                                                 side='sell',
+                                                                 price=sellCryptoValue,
+                                                                 size=float(response['filled_size']))
+
+                    print(sellresponse)
+                    return None
+
+
+
             if isCoinFinded:
                 break
+        if isStillWorthIt == False:
+            isCoinFinded = False
+            continue
         if isCoinFinded:
             break
-
-
-    print("moeda encontrada ",CoinFinded)
-    #Verify if the coin is still worth it
-    lastValue = cryptoCalculations.knowLastValue(getattr(dictionaryCryptos[CoinFinded],"codeCoinbase") + "-EUR")
-    print(lastValue)
-
-    if lastValue['type'] == 'ticker':
-        collection = db[getattr(dictionaryCryptos[CoinFinded], "name")]
-        historic = collection.find()
-
-        for his in historic:
-            highter = max(his["WeekOne"][1], his["WeekTwo"][1], his["WeekThree"][1], his["WeekFour"][1])
-
-            print(highter)
-            atualPrice = float(lastValue["price"])
-            x = (highter - atualPrice) / highter
-            print(x)
-            percentage = x * 100
-
-            print("Is Less : ", percentage, "%")
-
-            print(lessHight)
-
-            if lessHight <= percentage and (percentage - 3) <= percentageBelow:
-                isStillWorthIt = True
-            else:
-                return None
-
-    if isStillWorthIt == True:
-        quantityToInvest = float(moneyEUR) / (numberMaxCryptosToInvest - quantityCryprosInvested)
-
-        print("Quantidade decidida:", quantityToInvest)
-
-        #Verify if the money is suficient to buy the coin
-        if CoinFinded == 'BTC':
-            if (float(lastValue["price"]) * BTCSellMin) >= quantityToInvest:
-                if (float(lastValue["price"]) * BTCSellMin) <= float(moneyEUR):
-                    quantityToInvest = float(lastValue["price"]) * BTCSellMin
-                else:
-                    return None
-        elif CoinFinded == 'BCH':
-            if (float(lastValue["price"]) * BCHSellMin) >= quantityToInvest:
-                if (float(lastValue["price"]) * BCHSellMin) <= float(moneyEUR):
-                    quantityToInvest = float(lastValue["price"]) * BCHSellMin
-                else:
-                    return None
-        elif CoinFinded == 'LTC':
-            if (float(lastValue["price"]) * LTCSellMin) >= quantityToInvest:
-                if (float(lastValue["price"]) * LTCSellMin) <= float(moneyEUR):
-                    quantityToInvest = float(lastValue["price"]) * LTCSellMin
-                else:
-                    return None
-        elif CoinFinded == 'ETH':
-            if (float(lastValue["price"]) * ETHSellMin) >= quantityToInvest:
-                if (float(lastValue["price"]) * ETHSellMin) <= float(moneyEUR):
-                    quantityToInvest = float(lastValue["price"]) * ETHSellMin
-                else:
-                    return None
         else:
-            if (float(lastValue["price"]) * getattr(dictionaryCryptos[CoinFinded], "min")) >= quantityToInvest:
-                if (float(lastValue["price"]) * getattr(dictionaryCryptos[CoinFinded], "min")) <= float(moneyEUR):
-                    quantityToInvest = float(lastValue["price"]) * getattr(dictionaryCryptos[CoinFinded], "min")
-                else:
-                    return None
-
-    print('Moeda e: ' + getattr(dictionaryCryptos[CoinFinded],"codeCoinbase") + '-EUR')
-    print("quantidade para investir: ",quantityToInvest)
-    return None
-    #Buy
-    response = auth_client.place_market_order(product_id='' + getattr(dictionaryCryptos[CoinFinded],"codeCoinbase") + '-EUR',
-                                              side='buy',
-                                              funds=quantityToInvest)
-
-    print(response)
-    try:
-        while response["status"] != 'done':
-            response = auth_client.get_order(response["id"])
-    except:
-        return None
-
-    print(response)
-    print(response['filled_size'])
-    print(response['specified_funds'])
+            return None
 
 
-    # If buy is succed, the post a linit sell
-    if response["status"] == 'done':
-        sellingPrice = float(response['specified_funds']) * marginSell
-        print(sellingPrice)
-        sellresponse = auth_client.place_limit_order(product_id=response["product_id"],
-                                                     side='sell',
-                                                     price= sellingPrice,
-                                                     size=float(response['filled_size']))
 
-        print(sellresponse)
+
+
+
+
 
 
 
@@ -238,7 +294,7 @@ def typesCryptosInvestedAndSaveDB():
     while response["status"] != 'done':
         response = auth_client.get_order(response["id"])
 
-    print(response)
+    print("A compra: ",response)
     print(response['filled_size'])
     print(response['specified_funds'])
 
@@ -251,7 +307,7 @@ def typesCryptosInvestedAndSaveDB():
                                       size= float(response['filled_size']))
 
 
-        print(sellresponse)
+        print("A venda: ",sellresponse)
 
     # Create custom authentication for Exchange
     class CoinbaseExchangeAuth(AuthBase):
@@ -284,6 +340,54 @@ def typesCryptosInvestedAndSaveDB():
             'CB-ACCESS-PASSPHRASE': passphrase
         }
 
+    # Buy 0.01 BTC @ 100 USD
+    response = auth_client.buy(#price='100.00',  # USD
+                    #size='0.01',  # BTC
+                    funds='350',
+                    order_type='market',
+                    product_id='BTC-USD')
+
+    print("Outra compra: ", response)
+
+    while response["status"] != 'done':
+        response = auth_client.get_order(response["id"])
+
+    print("Depois: ", response)
+
+
+
+
+
+    valueCrypto = float(response['funds']) / float(response['filled_size'])
+
+    print("Value Crypto: ", valueCrypto)
+
+    #Calculate selling Price
+    buyValue = float(response['specified_funds'])
+    proofitPretended = buyValue * profit
+    feesBuySell = (2 * buyValue) * fees
+    feeProfit = proofitPretended * fees
+    sellValue = buyValue + proofitPretended + feesBuySell + feeProfit
+
+    print("Valor de Venda:", sellValue)
+
+    sellCryptoValue = sellValue / float(response['filled_size'])
+
+    print("Valor Crypto na venda: ",sellCryptoValue)
+
+    # If buy is succed, the post a linit sell
+    if response["status"] == 'done':
+        #sellingPrice = float(response['specified_funds']) * marginSell
+        #print(sellingPrice)
+        sellCryptoValue = round_up(n=sellCryptoValue, decimals=2)
+        sellresponse = auth_client.place_limit_order(product_id=response["product_id"],
+                                                     side='sell',
+                                                     price=sellCryptoValue,
+                                                     size=float(response['filled_size']))
+
+        print(sellresponse)
+
+
 
 
 
@@ -294,6 +398,8 @@ def typesCryptosInvestedAndSaveDB():
     auth = CoinbaseExchangeAuth(CoinbaseAPIKeySandbox, CoinbasesecretKeySandbox, CoinbaseAPIPassSandbox)
     print(auth)
     response = requests.get(api_url + '/users/self/exchange-limits', auth=auth)
+
+
 
     print(response.json())
 
@@ -324,3 +430,63 @@ def setProfileIDCryptos(auth_client, dictionary):
         print(getattr(dictionary[tes],"profileCoinbaseID"))
 
     return dictionary
+
+
+def setMaxPrecisionCryptos(auth_client, dictionary):
+    currencies = auth_client.get_currencies()
+    print(currencies)
+
+    for item in currencies:
+        #print(item["currency"])
+        #print(item["id"])
+
+        for d in dictionary:
+
+            #print(getattr(dictionary[d], "codeCoinbase"))
+            if item["id"] == getattr(dictionary[d], "codeCoinbase"):
+                setattr(dictionary[d], "maxPrecision", item["max_precision"])
+                break
+    print("divisor")
+    for tes in dictionary:
+        print(getattr(dictionary[tes],"name"))
+        print(getattr(dictionary[tes],"maxPrecision"))
+
+    return dictionary
+
+
+def setminSizeCryptos(public_client, dictionary):
+    products = public_client.get_products()
+    print(products)
+
+    print("Produtos")
+
+    for item in products:
+        #print(item["currency"])
+        #print(item["id"])
+
+        for d in dictionary:
+
+            #print(getattr(dictionary[d], "codeCoinbase"))
+            if item["id"] == (getattr(dictionary[d], "codeCoinbase") + '-EUR'):
+                setattr(dictionary[d], "min", item["min_market_funds"])
+                setattr(dictionary[d], "minCryptoSell", item["base_min_size"])
+                break
+    print("divisor")
+    for tes in dictionary:
+        print(getattr(dictionary[tes],"name"))
+        print(getattr(dictionary[tes],"min"))
+        print(getattr(dictionary[tes], "minCryptoSell"))
+
+    return dictionary
+
+
+def round_down(n, decimals=0):
+    multiplier = 10 ** decimals
+    return math.floor(n * multiplier) / multiplier
+
+
+def round_up(n, decimals=0):
+    multiplier = 10 ** decimals
+    return math.ceil(n * multiplier) / multiplier
+
+
