@@ -299,6 +299,7 @@ def calculatelowercryptos(dictionaryCryptos, public_client,auth_client,CoinbaseA
                         array = [percentage, getattr(dictionaryCryptos[items],"name")]
                         lowestCryptos.append(array)
 
+    print("Array lower cryptos: ",lowestCryptos)
     return lowestCryptos
 
 

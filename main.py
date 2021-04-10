@@ -34,7 +34,7 @@ def entireProcessEUR(client, auth_client):
 
     dic = excel.readClassesFromDatabase(client)
     dic = coinbaseActions.setProfileIDCryptos(auth_client=auth_client, dictionary=dic)
-    dic = coinbaseActions.setMaxPrecisionCryptos(auth_client=auth_client, dictionary=dic)
+    #dic = coinbaseActions.setMaxPrecisionCryptos(auth_client=auth_client, dictionary=dic)
     dic = coinbaseActions.setminSizeCryptos(public_client=public_client, dictionary=dic)
 
     cryptoCalculations.saveHistoricCryptos(dic, public_client)
@@ -72,46 +72,46 @@ if __name__ == '__main__':
 
 
     while True:
-        #try:
+        try:
 
-        print("*********************************************************************************************************")
-        print("*                                                                                                       *")
-        print("*                                                                                                       *")
-        print("*                                                                                                       *")
-        print("*                                             Init                                                      *")
-        print("*                                                                                                       *")
-        print("*                                                                                                       *")
-        print("*                                                                                                       *")
-        print("*********************************************************************************************************")
-
-
-        #API Coinbase Pro EUR Account
-        profileEUR = auth_client.get_account(EURAccountId)
-
-        #Sandbox API EUR Account
-        #profileEUR = auth_client.get_account('e4876f2e-8332-4c60-8af1-a76bdec60ce9')
+            print("*********************************************************************************************************")
+            print("*                                                                                                       *")
+            print("*                                                                                                       *")
+            print("*                                                                                                       *")
+            print("*                                             Init                                                      *")
+            print("*                                                                                                       *")
+            print("*                                                                                                       *")
+            print("*                                                                                                       *")
+            print("*********************************************************************************************************")
 
 
-        print(profileEUR["available"])
-        moneyEUR = profileEUR["available"]
+            #API Coinbase Pro EUR Account
+            profileEUR = auth_client.get_account(EURAccountId)
 
-        orders = auth_client.get_orders()
-
-        print(orders)
-
-        quantityCryprosInvested = 0  # Actual cryptos quantity already invested
-        for item in orders:
-            print(item)
-            if item["side"] == 'sell' and item["type"] == 'limit':
-                quantityCryprosInvested += 1
+            #Sandbox API EUR Account
+            #profileEUR = auth_client.get_account('e4876f2e-8332-4c60-8af1-a76bdec60ce9')
 
 
-        if float(moneyEUR) != 0 or quantityCryprosInvested < numberMaxCryptosToInvest:
-            entireProcessEUR(client, auth_client)
-        else:
-            print("Sleeping 30 sec.")
-            sleep(30)
-        #except:
-            #print("Something went wrong")
+            print(profileEUR["available"])
+            moneyEUR = profileEUR["available"]
+
+            orders = auth_client.get_orders()
+
+            print(orders)
+
+            quantityCryprosInvested = 0  # Actual cryptos quantity already invested
+            for item in orders:
+                print(item)
+                if item["side"] == 'sell' and item["type"] == 'limit':
+                    quantityCryprosInvested += 1
+
+
+            if float(moneyEUR) != 0 or quantityCryprosInvested < numberMaxCryptosToInvest:
+                entireProcessEUR(client, auth_client)
+            else:
+                print("Sleeping 30 sec.")
+                sleep(30)
+        except:
+            print("Something went wrong")
 
 

@@ -8,6 +8,7 @@ import base64, hashlib, hmac
 import numpy
 from _decimal import Decimal
 import math
+from datetime import datetime
 
 
 def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoClient):
@@ -128,7 +129,7 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
 
                 print("Quantidade decidida:", quantityToInvest)
 
-                if float(getattr(dictionaryCryptos[CoinFinded], "min")) >= quantityToInvest:
+                if float(getattr(dictionaryCryptos[CoinFinded], "min")) > quantityToInvest or float(getattr(dictionaryCryptos[CoinFinded], "minCryptoSell")) > (quantityToInvest / float(lastValue["price"])):
                     if float(getattr(dictionaryCryptos[CoinFinded], "min")) <= float(moneyEUR):
                         quantityToInvest = float(getattr(dictionaryCryptos[CoinFinded], "min"))
                         print("Minimo agora: ",float(getattr(dictionaryCryptos[CoinFinded], "minCryptoSell")))
@@ -137,8 +138,10 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
                                 quantityToInvest = float(getattr(dictionaryCryptos[CoinFinded], "minCryptoSell")) * float(lastValue["price"])
                                 quantityToInvest = quantityToInvest * 1.10
                             else:
+                                print("Dont have minimum to sell")
                                 isStillWorthIt = False
                     else:
+                        print("Dont have minimum to buy")
                         isStillWorthIt = False
 
             if isStillWorthIt == True:
@@ -175,60 +178,70 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
                     isStillWorthIt = False
                     continue
 
-                try:
-                    while response["status"] != 'done':
-                        response = auth_client.get_order(response["id"])
-                except:
-                    print("Error")
-                    isStillWorthIt = False
-                    continue
+                if isStillWorthIt == True:
+                    try:
+                        while response["status"] != 'done':
+                            response = auth_client.get_order(response["id"])
+                    except:
+                        print("Error")
+                        isStillWorthIt = False
+                        continue
 
-                print(response)
-                print(response['filled_size'])
-                print(response['specified_funds'])
+                    print(response)
 
-                valueCrypto = float(response['funds']) / float(response['filled_size'])
+                    fileBuyLogs = open("BuyLogs", "a")
+                    fileBuyLogs.write("" + str(datetime.now()) + str(response) + "\n")
+                    fileBuyLogs.close()
 
-                print("Value Crypto: ", valueCrypto)
+                    print(response['filled_size'])
+                    print(response['specified_funds'])
 
-                # Calculate selling Price
-                buyValue = float(response['specified_funds'])
-                proofitPretended = buyValue * profit
-                feesBuySell = (2 * buyValue) * fees
-                feeProfit = proofitPretended * fees
-                sellValue = buyValue + proofitPretended + feesBuySell + feeProfit
+                    valueCrypto = float(response['funds']) / float(response['filled_size'])
 
-                print("Valor de Venda:", sellValue)
+                    print("Value Crypto: ", valueCrypto)
 
-                sellCryptoValue = sellValue / float(response['filled_size'])
+                    # Calculate selling Price
+                    buyValue = float(response['specified_funds'])
+                    proofitPretended = buyValue * profit
+                    feesBuySell = (2 * buyValue) * fees
+                    feeProfit = proofitPretended * fees
+                    sellValue = buyValue + proofitPretended + feesBuySell + feeProfit
 
-                print("Valor Crypto na venda: ", sellCryptoValue)
+                    print("Valor de Venda:", sellValue)
 
-                # If buy is succed, the post a linit sell
-                if response["status"] == 'done':
+                    sellCryptoValue = sellValue / float(response['filled_size'])
 
-                    maxPrecision = getattr(dictionaryCryptos[CoinFinded], "maxPrecision")
+                    print("Valor Crypto na venda: ", sellCryptoValue)
 
-                    print("A precisão é esta: ", maxPrecision)
+                    # If buy is succed, the post a linit sell
+                    if response["status"] == 'done':
 
-                    deci = Decimal(maxPrecision)
-                    print(deci)
-                    expoente = deci.as_tuple().exponent
-                    print("expoente: ", deci.as_tuple().exponent)
-                    if expoente < 0:
-                        expoente = expoente * -1
+                        maxPrecision = getattr(dictionaryCryptos[CoinFinded], "maxPrecision")
 
-                    print("expoente agora: ", expoente)
+                        print("A precisão é esta: ", maxPrecision)
 
-                    sellCryptoValue = round_up(n=sellCryptoValue, decimals=expoente)
-                    print("Proço da Crypto já arredondado: ", sellCryptoValue)
-                    sellresponse = auth_client.place_limit_order(product_id=response["product_id"],
-                                                                 side='sell',
-                                                                 price=sellCryptoValue,
-                                                                 size=float(response['filled_size']))
+                        deci = Decimal(maxPrecision)
+                        print(deci)
+                        expoente = deci.as_tuple().exponent
+                        print("expoente: ", deci.as_tuple().exponent)
+                        if expoente < 0:
+                            expoente = expoente * -1
 
-                    print(sellresponse)
-                    return None
+                        print("expoente agora: ", expoente)
+
+                        sellCryptoValue = round_up(n=sellCryptoValue, decimals=expoente)
+                        print("Preço da Crypto já arredondado: ", sellCryptoValue)
+                        sellresponse = auth_client.place_limit_order(product_id=response["product_id"],
+                                                                     side='sell',
+                                                                     price=sellCryptoValue,
+                                                                     size=float(response['filled_size']))
+
+                        print(sellresponse)
+
+                        fileSellLogs = open("SellLogs", "a")
+                        fileSellLogs.write("" + str(datetime.now()) + str(sellresponse) + "\n")
+                        fileSellLogs.close()
+                        return None
 
 
 
@@ -470,12 +483,14 @@ def setminSizeCryptos(public_client, dictionary):
             if item["id"] == (getattr(dictionary[d], "codeCoinbase") + '-EUR'):
                 setattr(dictionary[d], "min", item["min_market_funds"])
                 setattr(dictionary[d], "minCryptoSell", item["base_min_size"])
+                setattr(dictionary[d], "maxPrecision", item["quote_increment"])
                 break
     print("divisor")
     for tes in dictionary:
         print(getattr(dictionary[tes],"name"))
         print(getattr(dictionary[tes],"min"))
         print(getattr(dictionary[tes], "minCryptoSell"))
+        print(getattr(dictionary[tes], "maxPrecision"))
 
     return dictionary
 
