@@ -1,11 +1,14 @@
 
 import cbpro
+import requests
+
 import excel
 from pymongo import MongoClient
 import cryptoCalculations
 import coinbaseActions
 from time import sleep
 from vardata import EURAccountId, numberMaxCryptosToInvest
+import logging
 
 
 client = MongoClient()
@@ -52,6 +55,7 @@ def entireProcessEUR(client, auth_client):
 
 
 if __name__ == '__main__':
+
 
     #coinbaseActions.typesCryptosInvestedAndSaveDB()
 
@@ -106,7 +110,7 @@ if __name__ == '__main__':
                     quantityCryprosInvested += 1
 
 
-            if float(moneyEUR) != 0 or quantityCryprosInvested < numberMaxCryptosToInvest:
+            if float(moneyEUR) != 0 and quantityCryprosInvested <= numberMaxCryptosToInvest:
                 entireProcessEUR(client, auth_client)
             else:
                 print("Sleeping 30 sec.")

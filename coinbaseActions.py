@@ -1,5 +1,7 @@
+import logging
+
 import cbpro
-from vardata import numberMaxCryptosToInvest, lessHight, profit, fees
+from vardata import numberMaxCryptosToInvest, lessHight, profit, fees, defaultPortofolio
 import cryptoCalculations
 import requests
 from requests.auth import AuthBase
@@ -231,12 +233,27 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
 
                         sellCryptoValue = round_up(n=sellCryptoValue, decimals=expoente)
                         print("Preço da Crypto já arredondado: ", sellCryptoValue)
-                        sellresponse = auth_client.place_limit_order(product_id=response["product_id"],
+                        try:
+                            sellresponse = auth_client.place_limit_order(product_id=response["product_id"],
                                                                      side='sell',
                                                                      price=sellCryptoValue,
                                                                      size=float(response['filled_size']))
 
-                        print(sellresponse)
+                            print(sellresponse)
+                        except:
+                            logging.basicConfig(filename="errorlogs.log",
+                                                format='%(asctime)s %(message)s',
+                                                filemode='a')
+
+                            # Let us Create an object
+                            logger = logging.getLogger()
+
+                            # Now we are going to Set the threshold of logger to DEBUG
+                            logger.setLevel(logging.DEBUG)
+
+                            # some messages to test
+                            logger.debug("Não deu certo")
+                            logger.debug(sellresponse)
 
                         fileSellLogs = open("SellLogs", "a")
                         fileSellLogs.write("" + str(datetime.now()) + str(sellresponse) + "\n")
@@ -434,7 +451,7 @@ def setProfileIDCryptos(auth_client, dictionary):
         for d in dictionary:
 
             #print(getattr(dictionary[d], "codeCoinbase"))
-            if item["currency"] == getattr(dictionary[d], "codeCoinbase"):
+            if item["currency"] == getattr(dictionary[d], "codeCoinbase") and item['profile_id'] == defaultPortofolio:
                 setattr(dictionary[d], "profileCoinbaseID", item["id"])
                 break
     print("divisor")
@@ -504,4 +521,33 @@ def round_up(n, decimals=0):
     multiplier = 10 ** decimals
     return math.ceil(n * multiplier) / multiplier
 
+# Create custom authentication for Exchange
+class CoinbaseExchangeAuth(AuthBase):
+    def __init__(self, api_key, secret_key, passphrase):
+        self.api_key = api_key
+        self.secret_key = secret_key
+        self.passphrase = passphrase
 
+    def __call__(self, request):
+        timestamp = str(time.time())
+
+        message = ''.join([timestamp, request.method,
+                           request.path_url, (request.body or '')])
+        request.headers.update(get_auth_headers(timestamp, message,
+                                                self.api_key,
+                                                self.secret_key,
+                                                self.passphrase))
+        return request
+
+def get_auth_headers(timestamp, message, api_key, secret_key, passphrase):
+    message = message.encode('ascii')
+    hmac_key = base64.b64decode(secret_key)
+    signature = hmac.new(hmac_key, message, hashlib.sha256)
+    signature_b64 = base64.b64encode(signature.digest()).decode('utf-8')
+    return {
+        'Content-Type': 'Application/JSON',
+        'CB-ACCESS-SIGN': signature_b64,
+        'CB-ACCESS-TIMESTAMP': timestamp,
+        'CB-ACCESS-KEY': api_key,
+        'CB-ACCESS-PASSPHRASE': passphrase
+    }

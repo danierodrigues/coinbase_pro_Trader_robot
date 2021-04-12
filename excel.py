@@ -5,6 +5,8 @@ import xlrd
 import openpyxl
 from Cryptocoin import cryptocoin as crypto
 
+linuxPath = r'./Criptomoedas_Coinbase.xlsx'
+windowsPath = r'Criptomoedas_Coinbase.xlsx'
 
 def createAndWriteExcel(currencies):
     workbook = xlsxwriter.Workbook('Criptomoedas_Coinbase.xlsx')
@@ -58,7 +60,7 @@ def readAndCreateClasses(client):
 
 
 
-    df = pd.read_excel(r'./Criptomoedas_Coinbase.xlsx') #r'./Criptomoedas_Coinbase.xlsx')  # place "r" before the path string to address special character, such as '\'. Don't forget to put the file name at the end of the path + '.xlsx'
+    df = pd.read_excel(linuxPath) #r'./Criptomoedas_Coinbase.xlsx')  # place "r" before the path string to address special character, such as '\'. Don't forget to put the file name at the end of the path + '.xlsx'
     #for items in df:
         #print(items)
         #continue
