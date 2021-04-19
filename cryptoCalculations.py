@@ -223,11 +223,6 @@ def calculatelowercryptos(dictionaryCryptos, public_client,auth_client,CoinbaseA
 
         for items in dictionaryCryptos:
 
-            #print(db.validate_collection(dictionaryCryptos[items]["name"]))
-            #collectionsNames = db.list_collection_names()
-            #print(collectionsNames)
-            #print(dictionaryCryptos[items]["name"])
-
             # import the 'errors' module from PyMongo
             try:
                 name = getattr(dictionaryCryptos[items],"name")
@@ -246,32 +241,6 @@ def calculatelowercryptos(dictionaryCryptos, public_client,auth_client,CoinbaseA
 
 
             print(getattr(dictionaryCryptos[items],"codeCoinbase") + "-EUR")
-            # instantiate a WebsocketClient instance, with a Mongo collection as a parameter
-            #wsClient = cbpro.WebsocketClient(url="wss://ws-feed.pro.coinbase.com", products="" + getattr(dictionaryCryptos[items],"codeCoinbase") + "-EUR",
-                                             #mongo_collection=collection, should_print=False, channels=["ticker"])
-            #wsClient.start()
-            #time.sleep(1)
-            #timeCount = time.time()
-            #while (time.time() - timeCount) <= 4:
-                #print("waiting");
-            #lastRecord = collection.find().sort([('timestamp', -1)]).limit(2)
-            #print(lastRecord[1])
-            #for record in lastRecord:
-                #print(record)
-            #time.sleep(4)
-
-
-            '''wsClient = myWebsocketClientEUR("" + getattr(dictionaryCryptos[items],"codeCoinbase"),auth_client,CoinbaseAPIKey, CoinbasesecretKey, CoinbaseAPIPass,collection)
-            wsClient.start()
-            print(wsClient.url, wsClient.products)
-            while (wsClient.message_count < 2):
-                print("\nmessage_count =", "{} \n".format(wsClient.message_count))
-                time.sleep(1)'''
-            #wsClient.close()
-
-            #print("vai fechar");
-            # wsClient.close()
-            #print("já fechou");
 
             lastValue = knowLastValue(getattr(dictionaryCryptos[items],"codeCoinbase") + "-EUR")
 
@@ -284,14 +253,23 @@ def calculatelowercryptos(dictionaryCryptos, public_client,auth_client,CoinbaseA
 
                 for item in historic:
                     highter = max(item["WeekOne"][1], item["WeekTwo"][1], item["WeekThree"][1], item["WeekFour"][1])
+                    minimum = min(item["WeekOne"][0], item["WeekTwo"][0], item["WeekThree"][0], item["WeekFour"][0])
 
                     print(highter)
+                    print(minimum)
                     atualPrice = float(lastValue["price"])
-                    x = (highter - atualPrice) / highter
-                    print(x)
-                    percentage = x * 100
+                    #x = (highter - atualPrice) / highter
+                    #print(x)
+                    #percentage = x * 100
 
-                    print("Is Less : ", percentage ,"%")
+                    range = highter - minimum
+                    correctedStartValue = atualPrice - minimum
+                    percentage = (correctedStartValue * 100) / range
+
+                    #print("Is Less : ", percentage ,"%")
+                    print("Is Less : ",percentage)
+                    percentage = 100 - percentage
+                    print("O final é: ",percentage)
 
                     print(lessHight)
 

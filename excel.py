@@ -60,7 +60,7 @@ def readAndCreateClasses(client):
 
 
 
-    df = pd.read_excel(linuxPath) #r'./Criptomoedas_Coinbase.xlsx')  # place "r" before the path string to address special character, such as '\'. Don't forget to put the file name at the end of the path + '.xlsx'
+    df = pd.read_excel(windowsPath) #r'./Criptomoedas_Coinbase.xlsx')  # place "r" before the path string to address special character, such as '\'. Don't forget to put the file name at the end of the path + '.xlsx'
     #for items in df:
         #print(items)
         #continue

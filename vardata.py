@@ -1,4 +1,4 @@
-lessHight = 15
+lessHight = 30
 numberMaxCryptosToInvest = 8
 marginSell = 1.015
 profit = 0.01

@@ -111,12 +111,19 @@ def buyAndSellCoinbase(dictionaryCryptos, priorityCoinsList, auth_client, MongoC
 
                         for his in historic:
                             highter = max(his["WeekOne"][1], his["WeekTwo"][1], his["WeekThree"][1], his["WeekFour"][1])
+                            minimum = min(his["WeekOne"][0], his["WeekTwo"][0], his["WeekThree"][0],his["WeekFour"][0])
 
                             print(highter)
                             atualPrice = float(lastValue["price"])
-                            x = (highter - atualPrice) / highter
-                            print(x)
-                            percentage = x * 100
+                            #x = (highter - atualPrice) / highter
+                            #print(x)
+                            #percentage = x * 100
+
+                            range = highter - minimum
+                            correctedStartValue = atualPrice - minimum
+                            percentage = (correctedStartValue * 100) / range
+
+                            percentage = 100 - percentage
 
                             print("Is Less : ", percentage, "%")
 
