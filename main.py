@@ -15,14 +15,6 @@ client = MongoClient()
 
 public_client = cbpro.PublicClient()
 
-AlphaVantageKey = "OGB3T91BIOCUAQ95"
-CoinbasesecretKey = "rGqQm7H2BW0I+RLxI6VngMmlSTwxxf2dGaNpubRc8DH0z6won9cu3/i4/eC1TPxhj2nZRO4E1K2IxutXOvwHfA=="
-CoinbaseAPIPass = "mwa296oozxm"
-CoinbaseAPIKey = "e5a5d3e7edf23c0e7a61b1c4de8b257a"
-
-CoinbasesecretKeySandbox = "oxMzcd0xigpV+W4cxsl2xqntrG2iYx841igfgbu646UgCMzlxcfCNqUB2nUFn79EzfynVwKj7hE8ElUipX46nA=="
-CoinbaseAPIPassSandbox = "fyhw1sn2u0h"
-CoinbaseAPIKeySandbox = "cc94e7c4d7428a8c319640509285443a"
 
 isFirstTime = True
 
